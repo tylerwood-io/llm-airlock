@@ -36,7 +36,7 @@ export function statusForReject(reason) {
 }
 
 // Build the hardened HTTP server. `accept` is the dumb intake's accept(rawBody,
-// {ip, now}). `manifest` is the static beacon manifest object (or null -> {}).
+// {ip, now}). `manifest` is the static manifest object (or null -> {}).
 // `now` is injected for determinism/resume-safety in tests.
 export function createEdgeServer({ accept, manifest = null, now = () => Date.now(), limits = {} } = {}) {
   const L = { ...EDGE_LIMITS, ...limits };

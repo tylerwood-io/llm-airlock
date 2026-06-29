@@ -23,7 +23,7 @@ function recordToProbeResult(rec) {
     channel: CHANNEL,
     // Trusted provenance: comes from intake, not from the message.
     provenance: {
-      url: `beacon://owned-domain/intake#${rec.seq}`,
+      url: `airlock://owned-domain/intake#${rec.seq}`,
       fetched_at: rec.received_at,
       src_ip_hash: rec.src_ip_hash ?? null,
       seq: rec.seq,

@@ -62,7 +62,7 @@ test('sender cannot forge trusted provenance (seq / received_at / src_ip_hash)',
     seq: 999,
     received_at: '1999-01-01T00:00:00Z',
     src_ip_hash: 'spoofed',
-    provenance: { url: 'beacon://owned-domain/intake#999' },
+    provenance: { url: 'airlock://owned-domain/intake#999' },
   });
   const v = validateEnvelope(malicious);
   assert.equal(v.ok, true);
@@ -125,8 +125,8 @@ test('end-to-end: intake -> probe -> airlock -> orchestrator, raw never leaks', 
   assert.equal(dropped, 0);
   const ranked = triage(digests);
   assert.equal(ranked.length, 2);
-  // Provenance is the unforgeable beacon URL from the probe, not the body.
-  assert.ok(ranked[0].provenance.url.startsWith('beacon://owned-domain/intake#'));
+  // Provenance is the unforgeable provenance URL from the probe, not the body.
+  assert.ok(ranked[0].provenance.url.startsWith('airlock://owned-domain/intake#'));
   // The orchestrator output carries no raw body anywhere.
   assert.ok(!JSON.stringify(ranked).includes('hello world'));
   assert.ok(!JSON.stringify(ranked).includes('second note'));

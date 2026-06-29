@@ -99,7 +99,7 @@ test('happy path: valid POST is accepted (202) and lands in the queue', async ()
 });
 
 test('wrong method and wrong path are 405; manifest GET is served', async () => {
-  const manifest = { schema: 'openclaw.beacon/v0', kind: 'agent-mediated-inbound' };
+  const manifest = { schema: 'airlock.manifest/v0', kind: 'agent-mediated-inbound' };
   await withEdge({ accept: () => ({ accepted: true }), manifest }, async (port) => {
     assert.equal((await hit(port, { method: 'GET', path: '/intake' })).status, 405);
     assert.equal((await hit(port, { method: 'POST', path: '/' })).status, 405);

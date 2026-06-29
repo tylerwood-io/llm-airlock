@@ -10,7 +10,7 @@
 // src_ip_hash) is supplied by US via `meta`. Nothing the sender puts in the
 // envelope can override those — the envelope is nested, never spread.
 
-export const ENVELOPE_VERSION = 'openclaw.beacon.message/v0';
+export const ENVELOPE_VERSION = 'airlock.message/v0';
 export const DEFAULT_MAX_BODY_BYTES = 16384; // matches the manifest's intake.max_bytes
 
 const isStr = (x) => typeof x === 'string';
