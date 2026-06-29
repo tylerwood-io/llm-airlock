@@ -1,0 +1,13 @@
+{
+  "name": "airlock",
+  "version": "0.1.0",
+  "description": "Fail-closed pipeline for feeding untrusted content to LLM agents without exposing a privileged context to prompt injection, exfiltration, or consent violations.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}
