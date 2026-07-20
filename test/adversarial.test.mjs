@@ -60,7 +60,24 @@ test('4. live URLs are defanged', () => {
   }));
   const r = runAirlockItem(probe('hi'), ex);
   assert.equal(r.ok, true);
-  assert.equal(r.digest.links_defanged[0], 'hxxps://evil[.]example/steal');
+  assert.equal(r.digest.links_defanged[0], 'hxxps[:]//evil[.]example/steal');
+});
+
+test('4b. non-http schemes are defanged too (javascript:, data:)', () => {
+  const ex = mockCompromisedExtractor(JSON.stringify({
+    source_channel: 'socialfeed',
+    apparent_sender: null,
+    claimed_intent: 'click me',
+    addressed_to_principal_confidence: 0.3,
+    identifiers_found: [],
+    links_defanged: ['javascript:alert(document.cookie)', 'data:text/html,<script>x</script>'],
+    risk_flags: ['malware_link'],
+    neutral_summary: 'links were posted',
+  }));
+  const r = runAirlockItem(probe('hi'), ex);
+  assert.equal(r.ok, true);
+  assert.ok(r.digest.links_defanged[0].startsWith('javascript[:]'));
+  assert.ok(r.digest.links_defanged[1].startsWith('data[:]'));
 });
 
 test('5. oversized + imperative summary is capped and hidden chars stripped', () => {
@@ -138,13 +155,19 @@ test('9. volume flood is capped and reported, not silently dropped', () => {
   assert.equal(dropped, 900);
 });
 
-test('10. hidden / homoglyph chars stripped from identifiers', () => {
+test('10. hidden chars stripped and homoglyphs marked in identifiers', () => {
   const ex = mockCompromisedExtractor(JSON.stringify({
     source_channel: 'socialfeed',
     apparent_sender: null,
     claimed_intent: 'x',
     addressed_to_principal_confidence: 0.2,
-    identifiers_found: ['jo\u200brda\u202dn', 'target@example.com'],
+    identifiers_found: [
+      'jo\u200brda\u202dn',        // zero-width space + bidi override
+      'p\u0430ypal.com',           // Cyrillic \u0430 posing as Latin a
+      'g\u03bfogle-support',       // Greek omicron posing as Latin o
+      '\u0440\u0443\u043f\u0430\u043b', // pure Cyrillic \u2014 left readable
+      'target@example.com',
+    ],
     links_defanged: [],
     risk_flags: [],
     neutral_summary: 'hi',
@@ -152,6 +175,46 @@ test('10. hidden / homoglyph chars stripped from identifiers', () => {
   const r = runAirlockItem(probe('hi'), ex);
   assert.equal(r.ok, true);
   assert.equal(r.digest.identifiers_found[0], 'jordan');
+  // Mixed-script homoglyphs are made visible, not silently displayed.
+  assert.equal(r.digest.identifiers_found[1], 'p{U+0430}ypal.com');
+  assert.equal(r.digest.identifiers_found[2], 'g{U+03BF}ogle-support');
+  // A legitimately non-Latin identifier is not mangled.
+  assert.equal(r.digest.identifiers_found[3], '\u0440\u0443\u043f\u0430\u043b');
+});
+
+test('10b. invisible smuggling channels are stripped (Tags block, soft hyphen, variation selectors)', () => {
+  const smuggled = 'hello'
+    + String.fromCodePoint(0xE0041, 0xE0042, 0xE0043) // Unicode Tags: invisible "ABC"
+    + '\u00adwor\ufe0fld';                            // soft hyphen + variation selector
+  const ex = mockCompromisedExtractor(JSON.stringify({
+    source_channel: 'socialfeed',
+    apparent_sender: null,
+    claimed_intent: 'x',
+    addressed_to_principal_confidence: 0.2,
+    identifiers_found: [],
+    links_defanged: [],
+    risk_flags: [],
+    neutral_summary: smuggled,
+  }));
+  const r = runAirlockItem(probe('hi'), ex);
+  assert.equal(r.ok, true);
+  assert.equal(r.digest.neutral_summary, 'helloworld');
+});
+
+test('10c. homoglyph spoofs in URLs are marked after defanging', () => {
+  const ex = mockCompromisedExtractor(JSON.stringify({
+    source_channel: 'socialfeed',
+    apparent_sender: null,
+    claimed_intent: 'x',
+    addressed_to_principal_confidence: 0.2,
+    identifiers_found: [],
+    links_defanged: ['https://p\u0430ypal.com/login'],
+    risk_flags: ['impersonation'],
+    neutral_summary: 'hi',
+  }));
+  const r = runAirlockItem(probe('hi'), ex);
+  assert.equal(r.ok, true);
+  assert.equal(r.digest.links_defanged[0], 'hxxps[:]//p{U+0430}ypal[.]com/login');
 });
 
 test('11. payload cannot forge the fence delimiters to break out', () => {

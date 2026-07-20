@@ -3,7 +3,7 @@
 // clean digest (dropping any injected extra keys). Provenance is supplied by
 // the probe here and can never be set by the extractor.
 import { validateDigest } from './schema.mjs';
-import { capText, defangUrl } from './sanitize.mjs';
+import { capText, defangUrl, markConfusables } from './sanitize.mjs';
 
 // Real models often wrap JSON in ```json fences or add a stray sentence. The
 // extractor output is untrusted text either way, so we locate the JSON object
@@ -58,7 +58,7 @@ export function innerDoor(extractorOutputRaw, trustedProvenance) {
     apparent_sender: value.apparent_sender === null ? null : capText(value.apparent_sender, MAX_SENDER),
     claimed_intent: capText(value.claimed_intent, MAX_INTENT),
     addressed_to_principal_confidence: Math.max(0, Math.min(1, value.addressed_to_principal_confidence)),
-    identifiers_found: value.identifiers_found.slice(0, MAX_IDENTS).map((s) => capText(s, MAX_IDENT)),
+    identifiers_found: value.identifiers_found.slice(0, MAX_IDENTS).map((s) => markConfusables(capText(s, MAX_IDENT))),
     links_defanged: value.links_defanged.slice(0, MAX_LINKS).map(defangUrl),
     risk_flags: [...new Set(value.risk_flags)],
     neutral_summary: capText(value.neutral_summary, MAX_SUMMARY),
